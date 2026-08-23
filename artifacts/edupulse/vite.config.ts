@@ -47,6 +47,14 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, 'dist/public'),
     emptyOutDir: true,
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'wouter', '@tanstack/react-query'],
+          lucide: ['lucide-react'],
+        },
+      },
+    },
   },
   server: {
     port,
