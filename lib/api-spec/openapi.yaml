@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: students
+  - name: attendance
+  - name: performance
+  - name: dashboard
 paths:
   /healthz:
     get:
@@ -24,7 +28,186 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /students:
+    get:
+      operationId: listStudents
+      tags: [students]
+      summary: List students
+      responses:
+        "200":
+          description: Students
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Student" }
+    post:
+      operationId: createStudent
+      tags: [students]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StudentInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Student" }
+  /students/{id}:
+    get:
+      operationId: getStudent
+      tags: [students]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      responses:
+        "200":
+          description: Student
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Student" }
+    put:
+      operationId: updateStudent
+      tags: [students]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StudentInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Student" }
+    delete:
+      operationId: deleteStudent
+      tags: [students]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      responses:
+        "204": { description: Deleted }
+  /attendance:
+    get:
+      operationId: listAttendance
+      tags: [attendance]
+      responses:
+        "200":
+          description: Attendance records
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Attendance" }
+    post:
+      operationId: createAttendance
+      tags: [attendance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AttendanceInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Attendance" }
+  /attendance/{id}:
+    put:
+      operationId: updateAttendance
+      tags: [attendance]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AttendanceInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Attendance" }
+    delete:
+      operationId: deleteAttendance
+      tags: [attendance]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      responses:
+        "204": { description: Deleted }
+  /performance:
+    get:
+      operationId: listPerformance
+      tags: [performance]
+      responses:
+        "200":
+          description: Performance records
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Performance" }
+    post:
+      operationId: createPerformance
+      tags: [performance]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PerformanceInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Performance" }
+  /performance/{id}:
+    put:
+      operationId: updatePerformance
+      tags: [performance]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PerformanceInput" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Performance" }
+    delete:
+      operationId: deletePerformance
+      tags: [performance]
+      parameters:
+        - { $ref: "#/components/parameters/Id" }
+      responses:
+        "204": { description: Deleted }
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Dashboard" }
 components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: number }
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +216,85 @@ components:
           type: string
       required:
         - status
+    Student:
+      type: object
+      required: [id, name, enrollmentNo, email, semester, branch]
+      properties:
+        id: { type: number }
+        name: { type: string }
+        enrollmentNo: { type: string }
+        email: { type: string }
+        semester: { type: number }
+        branch: { type: string }
+    StudentInput:
+      type: object
+      required: [name, enrollmentNo, email, semester, branch]
+      properties:
+        name: { type: string, minLength: 1 }
+        enrollmentNo: { type: string, minLength: 1 }
+        email: { type: string }
+        semester: { type: number, minimum: 1 }
+        branch: { type: string, minLength: 1 }
+    Attendance:
+      type: object
+      required: [id, studentId, subject, date, status]
+      properties:
+        id: { type: number }
+        studentId: { type: number }
+        subject: { type: string }
+        date: { type: string, format: date }
+        status: { type: string, enum: [Present, Absent] }
+    AttendanceInput:
+      type: object
+      required: [studentId, subject, date, status]
+      properties:
+        studentId: { type: number }
+        subject: { type: string, minLength: 1 }
+        date: { type: string, format: date }
+        status: { type: string, enum: [Present, Absent] }
+    Performance:
+      type: object
+      required: [id, studentId, subject, internalMarks, practicalMarks]
+      properties:
+        id: { type: number }
+        studentId: { type: number }
+        subject: { type: string }
+        internalMarks: { type: number }
+        practicalMarks: { type: number }
+    PerformanceInput:
+      type: object
+      required: [studentId, subject, internalMarks, practicalMarks]
+      properties:
+        studentId: { type: number }
+        subject: { type: string, minLength: 1 }
+        internalMarks: { type: number, minimum: 0, maximum: 30 }
+        practicalMarks: { type: number, minimum: 0, maximum: 20 }
+    Dashboard:
+      type: object
+      required: [totalStudents, overallAttendance, averageMarks, recentStudents, subjectAttendance, subjectPerformance, lowAttendance]
+      properties:
+        totalStudents: { type: number }
+        overallAttendance: { type: number }
+        averageMarks: { type: number }
+        recentStudents:
+          type: array
+          items: { $ref: "#/components/schemas/Student" }
+        subjectAttendance:
+          type: array
+          items: { $ref: "#/components/schemas/SubjectSummary" }
+        subjectPerformance:
+          type: array
+          items: { $ref: "#/components/schemas/SubjectSummary" }
+        lowAttendance:
+          type: array
+          items: { $ref: "#/components/schemas/StudentSummary" }
+    SubjectSummary:
+      type: object
+      required: [subject, value]
+      properties:
+        subject: { type: string }
+        value: { type: number }
+    StudentSummary:
+      allOf:
+        - $ref: "#/components/schemas/SubjectSummary"
 

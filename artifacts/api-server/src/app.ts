@@ -31,4 +31,9 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
 
+app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  logger.error({ err }, "Unhandled request error");
+  res.status(500).json({ success: false, message: "Unable to connect to server. Please try again." });
+});
+
 export default app;

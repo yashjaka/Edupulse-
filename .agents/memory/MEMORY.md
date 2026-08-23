@@ -1,0 +1,1 @@
+- [EduPulse database choice](edupulse-database.md) — managed PostgreSQL is the working persistence layer because MongoDB is not available in the workspace.

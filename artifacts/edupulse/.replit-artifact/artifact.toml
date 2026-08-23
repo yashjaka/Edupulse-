@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "EduPulse"
+description = "A simple academic performance and attendance tracking system for faculty, with real student, attendance, and marks management backed by a REST API."
+version = "1.0.0"
+id = "artifacts/edupulse"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19494
+
+[services.development]
+run = "pnpm --filter @workspace/edupulse run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/edupulse", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/edupulse/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19494"
+BASE_PATH = "/"

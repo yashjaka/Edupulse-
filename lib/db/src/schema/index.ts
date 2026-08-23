@@ -1,20 +1,26 @@
-// Export your models here. Add one export per file
-// export * from "./posts";
-//
-// Each model/table should ideally be split into different files.
-// Each model/table should define a Drizzle table, insert schema, and types:
-//
-//   import { pgTable, text, serial } from "drizzle-orm/pg-core";
-//   import { createInsertSchema } from "drizzle-zod";
-//   import { z } from "zod/v4";
-//
-//   export const postsTable = pgTable("posts", {
-//     id: serial("id").primaryKey(),
-//     title: text("title").notNull(),
-//   });
-//
-//   export const insertPostSchema = createInsertSchema(postsTable).omit({ id: true });
-//   export type InsertPost = z.infer<typeof insertPostSchema>;
-//   export type Post = typeof postsTable.$inferSelect;
+import { integer, numeric, pgTable, serial, text, date } from "drizzle-orm/pg-core";
 
-export {}
+export const students = pgTable("students", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  enrollmentNo: text("enrollment_no").notNull().unique(),
+  email: text("email").notNull(),
+  semester: integer("semester").notNull(),
+  branch: text("branch").notNull(),
+});
+
+export const attendance = pgTable("attendance", {
+  id: serial("id").primaryKey(),
+  studentId: integer("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+  subject: text("subject").notNull(),
+  date: date("date").notNull(),
+  status: text("status").notNull(),
+});
+
+export const performance = pgTable("performance", {
+  id: serial("id").primaryKey(),
+  studentId: integer("student_id").notNull().references(() => students.id, { onDelete: "cascade" }),
+  subject: text("subject").notNull(),
+  internalMarks: numeric("internal_marks").notNull(),
+  practicalMarks: numeric("practical_marks").notNull(),
+});

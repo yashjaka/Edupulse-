@@ -1,0 +1,51 @@
+import { useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { getListAttendanceQueryKey, useCreateAttendance, useDeleteAttendance, useListAttendance, useListStudents, useUpdateAttendance, AttendanceInputStatus, type Attendance, type AttendanceInput } from '@workspace/api-client-react';
+import { CalendarCheck2, Check, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { AppShell, Button, EmptyState, ErrorState, Field, FilterSelect, Input, LoadingPanel, Modal, PageHeading, Select, Toast, SUBJECTS } from '@/components/edupulse';
+
+const today = new Date().toISOString().slice(0, 10);
+const blank: AttendanceInput = { studentId: 0, subject: SUBJECTS[0], date: today, status: AttendanceInputStatus.Present };
+
+function AttendanceForm({ initial, students, onClose, onSaved }: { initial?: Attendance; students: { id: number; name: string; enrollmentNo: string }[]; onClose: () => void; onSaved: () => void }) {
+  const [form, setForm] = useState<AttendanceInput>(initial ? { studentId: initial.studentId, subject: initial.subject, date: initial.date.slice(0, 10), status: initial.status } : { ...blank, studentId: students[0]?.id ?? 0 });
+  const [error, setError] = useState('');
+  const client = useQueryClient();
+  const create = useCreateAttendance();
+  const update = useUpdateAttendance();
+  const pending = create.isPending || update.isPending;
+  const change = (key: keyof AttendanceInput, value: string) => setForm((current) => ({ ...current, [key]: key === 'studentId' ? Number(value) : value }));
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!form.studentId || !form.subject || !form.date) { setError('Choose a student, subject and date.'); return; }
+    const onSuccess = () => { client.invalidateQueries({ queryKey: getListAttendanceQueryKey() }); onSaved(); onClose(); };
+    if (initial) update.mutate({ id: initial.id, data: form }, { onSuccess, onError: () => setError('Could not update this attendance record.') }); else create.mutate({ data: form }, { onSuccess, onError: () => setError('Could not create this attendance record.') });
+  };
+  return <form onSubmit={submit} className="space-y-4"><Field label="Student"><Select data-testid="select-attendance-student" value={form.studentId} onChange={(e) => change('studentId', e.target.value)}>{students.map((student) => <option value={student.id} key={student.id}>{student.name} · {student.enrollmentNo}</option>)}</Select></Field><div className="grid gap-4 sm:grid-cols-2"><Field label="Subject"><Select data-testid="select-attendance-subject" value={form.subject} onChange={(e) => change('subject', e.target.value)}>{SUBJECTS.map((subject) => <option key={subject} value={subject}>{subject}</option>)}</Select></Field><Field label="Date"><Input data-testid="input-attendance-date" type="date" value={form.date} onChange={(e) => change('date', e.target.value)} /></Field></div><Field label="Status"><div className="grid grid-cols-2 gap-2">{[AttendanceInputStatus.Present, AttendanceInputStatus.Absent].map((status) => <button type="button" data-testid={`button-status-${status.toLowerCase()}`} key={status} onClick={() => setForm((current) => ({ ...current, status }))} className={`rounded-lg border px-3 py-3 text-sm font-semibold transition-colors ${form.status === status ? status === AttendanceInputStatus.Present ? 'border-primary bg-primary/10 text-primary' : 'border-destructive bg-destructive/10 text-destructive' : 'border-border bg-background text-muted-foreground hover:bg-muted'}`}>{status === AttendanceInputStatus.Present ? <Check size={15} className="mr-2 inline" /> : <X size={15} className="mr-2 inline" />}{status}</button>)}</div></Field>{error && <div data-testid="status-attendance-form" className="rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}</div>}<div className="flex justify-end gap-2 border-t border-border pt-5"><Button type="button" variant="secondary" onClick={onClose}>Cancel</Button><Button data-testid="button-save-attendance" disabled={pending} type="submit">{pending ? 'Saving…' : initial ? 'Save changes' : 'Record attendance'}</Button></div></form>;
+}
+
+export default function AttendancePage() {
+  const attendance = useListAttendance();
+  const students = useListStudents();
+  const remove = useDeleteAttendance();
+  const client = useQueryClient();
+  const [subject, setSubject] = useState('all');
+  const [modal, setModal] = useState<'create' | 'edit' | null>(null);
+  const [selected, setSelected] = useState<Attendance | undefined>();
+  const [notice, setNotice] = useState('');
+  const studentList = students.data ?? [];
+  const names = useMemo(() => new Map(studentList.map((student) => [student.id, student.name])), [studentList]);
+  const records = useMemo(() => (attendance.data ?? []).filter((row) => subject === 'all' || row.subject === subject), [attendance.data, subject]);
+  const present = records.filter((row) => row.status === 'Present').length;
+  const rate = records.length ? (present / records.length) * 100 : 0;
+  const flash = (message: string) => { setNotice(message); setTimeout(() => setNotice(''), 2600); };
+  const deleteOne = (row: Attendance) => { if (!window.confirm('Delete this attendance record?')) return; remove.mutate({ id: row.id }, { onSuccess: () => { client.invalidateQueries({ queryKey: getListAttendanceQueryKey() }); flash('Attendance record deleted'); }, onError: () => flash('Could not delete record') }); };
+  const ready = !attendance.isLoading && !students.isLoading;
+  return <AppShell><div className="page-enter"><PageHeading eyebrow="Daily register" title="Attendance" description="Record presence while the moment is fresh. Spot patterns before they become problems." action={<Button data-testid="button-add-attendance" onClick={() => { setSelected(undefined); setModal('create'); }}><Plus size={17} />Record attendance</Button>} />
+    {attendance.isError || students.isError ? <ErrorState retry={() => { attendance.refetch(); students.refetch(); }} /> : !ready ? <LoadingPanel /> : <><div className="mb-5 grid gap-4 sm:grid-cols-3"><div className="rounded-xl border border-border bg-card p-5 shadow-xs"><div className="font-mono text-[10px] uppercase tracking-[.16em] text-muted-foreground">Filtered records</div><div className="mt-3 font-serif text-3xl font-semibold">{records.length}</div><div className="mt-1 text-xs text-muted-foreground">{subject === 'all' ? 'across all subjects' : `${subject} records`}</div></div><div className="rounded-xl border border-border bg-card p-5 shadow-xs"><div className="font-mono text-[10px] uppercase tracking-[.16em] text-muted-foreground">Presence rate</div><div className={`mt-3 font-serif text-3xl font-semibold ${rate < 75 && records.length ? 'text-destructive' : 'text-primary'}`}>{rate.toFixed(1)}%</div><div className="mt-1 text-xs text-muted-foreground">{present} present · {records.length - present} absent</div></div><div className="rounded-xl border border-border bg-card p-5 shadow-xs"><div className="font-mono text-[10px] uppercase tracking-[.16em] text-muted-foreground">Subjects tracked</div><div className="mt-3 font-serif text-3xl font-semibold">{new Set(records.map((row) => row.subject)).size}</div><div className="mt-1 text-xs text-muted-foreground">of {SUBJECTS.length} core subjects</div></div></div>
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3"><FilterSelect label="subject" value={subject} onChange={setSubject} options={['all', ...SUBJECTS]} /><div className="flex items-center gap-2 text-xs text-muted-foreground"><CalendarCheck2 size={15} className="text-primary" />Most recent entries appear first</div></div>
+      {!records.length ? <EmptyState title="No attendance records here" description={subject === 'all' ? 'Record your first class attendance to start building the pulse.' : `There are no ${subject} records yet.`} action={<Button onClick={() => setModal('create')}><Plus size={16} />Record attendance</Button>} /> : <div className="overflow-hidden rounded-xl border border-border bg-card shadow-xs"><div className="grid grid-cols-[1.3fr_.7fr_1fr_.8fr_auto] gap-3 border-b border-border bg-muted/50 px-5 py-3 font-mono text-[10px] uppercase tracking-[.15em] text-muted-foreground"><div>Student</div><div>Subject</div><div>Date</div><div>Status</div><div /></div><div className="divide-y divide-border">{[...records].sort((a, b) => b.date.localeCompare(a.date)).map((row) => <div key={row.id} data-testid={`row-attendance-${row.id}`} className="grid grid-cols-[1.3fr_.7fr_1fr_.8fr_auto] items-center gap-3 px-5 py-4 transition-colors hover:bg-muted/35"><div className="min-w-0 truncate text-sm font-semibold">{names.get(row.studentId) ?? `Student #${row.studentId}`}</div><div className="font-mono text-xs text-muted-foreground">{row.subject}</div><div className="text-xs text-muted-foreground">{new Date(row.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div><div><span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${row.status === 'Present' ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>{row.status}</span></div><div className="flex justify-end gap-1"><button data-testid={`button-edit-attendance-${row.id}`} onClick={() => { setSelected(row); setModal('edit'); }} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"><Pencil size={15} /></button><button data-testid={`button-delete-attendance-${row.id}`} onClick={() => deleteOne(row)} className="rounded-lg p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"><Trash2 size={15} /></button></div></div>)}</div></div>}
+    </>}
+    {modal && <Modal title={modal === 'edit' ? 'Edit attendance' : 'Record attendance'} description="Keep the register accurate for your next review." onClose={() => setModal(null)}><AttendanceForm initial={selected} students={studentList} onClose={() => setModal(null)} onSaved={() => flash(modal === 'edit' ? 'Attendance updated' : 'Attendance recorded')} /></Modal>}{notice && <Toast message={notice} />}
+  </div></AppShell>;
+}

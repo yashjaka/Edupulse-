@@ -1,6 +1,6 @@
-# [Project name]
+# EduPulse
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+EduPulse helps faculty track students, attendance, and academic performance in one responsive workspace.
 
 ## Run & Operate
 
@@ -9,36 +9,43 @@ _Replace the heading above with the project's name, and this line with one sente
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required env: `DATABASE_URL` — managed PostgreSQL connection string
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
 - API: Express 5
-- DB: PostgreSQL + Drizzle ORM
+- DB: PostgreSQL + Drizzle ORM (the managed database available in this workspace)
 - Validation: Zod (`zod/v4`), `drizzle-zod`
 - API codegen: Orval (from OpenAPI spec)
 - Build: esbuild (CJS bundle)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/edupulse/src/pages` — login, dashboard, students, attendance, and performance pages
+- `artifacts/edupulse/src/components/edupulse.tsx` — shared shell, modals, forms, and reusable display components
+- `artifacts/api-server/src/routes/edupulse.ts` — REST CRUD and dashboard endpoints
+- `lib/db/src/schema/index.ts` — source-of-truth database tables
+- `lib/api-spec/openapi.yaml` — source-of-truth API contract
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The product intentionally has one faculty user flow and exactly five main pages to keep the PBL demo easy to explain.
+- Dashboard values are derived from attendance and performance rows rather than stored summary values.
+- Attendance and performance reference students with database cascade deletes, preventing broken detail views.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Faculty can manage students, attendance, and performance records, then review calculated academic summaries.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Keep the scope student-friendly and viva-ready; do not add enterprise modules or extra roles.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- After editing the OpenAPI contract, run `pnpm --filter @workspace/api-spec run codegen`.
+- After schema changes, run `pnpm --filter @workspace/db run push`.
 
 ## Pointers
 
