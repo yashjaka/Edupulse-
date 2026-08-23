@@ -1,0 +1,15 @@
+{
+  "buildCommand": "pnpm --filter @workspace/edupulse run build",
+  "outputDirectory": "artifacts/edupulse/dist/public",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://edupulse-api.onrender.com/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
