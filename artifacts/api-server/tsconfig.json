@@ -5,6 +5,10 @@
     "tsBuildInfoFile": ".tsbuildinfo",
     "outDir": "dist",
     "rootDir": "src",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
     "types": ["node"]
   },
   "include": ["src"],
