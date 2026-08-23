@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://edupulse-api.onrender.com/api/$1"
+      "destination": "/api"
     },
     {
       "source": "/(.*)",
