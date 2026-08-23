@@ -9,7 +9,14 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
   logger.info({ method: req.method, url: req.url?.split("?")[0] }, "request");
   next();
 });
-app.use(cors());
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+  }),
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
