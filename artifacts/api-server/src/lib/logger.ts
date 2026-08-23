@@ -1,5 +1,6 @@
 import pino from "pino";
 
+const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 const isProduction = process.env.NODE_ENV === "production";
 
 export const logger = pino({
@@ -9,7 +10,7 @@ export const logger = pino({
     "req.headers.cookie",
     "res.headers['set-cookie']",
   ],
-  ...(isProduction
+  ...(isServerless || isProduction
     ? {}
     : {
         transport: {

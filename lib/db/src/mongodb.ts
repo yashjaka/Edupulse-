@@ -192,7 +192,11 @@ export const localStore = new StorageStore();
 let isMongoConnected = false;
 
 export async function connectMongo(): Promise<boolean> {
-  const uri = process.env.MONGO_URI || process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/edupulse";
+  const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
+  if (!uri) {
+    isMongoConnected = false;
+    return false;
+  }
   try {
     if (mongoose.connection.readyState === 1) return true;
     await mongoose.connect(uri, { serverSelectionTimeoutMS: 2000 });
@@ -201,7 +205,7 @@ export async function connectMongo(): Promise<boolean> {
     return true;
   } catch (err) {
     isMongoConnected = false;
-    console.log("MongoDB connection not active locally. Using EduPulse Local Storage Engine.");
+    console.log("MongoDB connection not active. Using EduPulse Local Storage Engine.");
     return false;
   }
 }
